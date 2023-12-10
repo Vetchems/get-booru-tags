@@ -3,7 +3,7 @@
 // @namespace    https://github.com/vetchems/
 // @version      0.4.8
 // @description  Press the [~] tilde key under ESC to open a prompt with all tags
-// @author       Vetchems
+// @author       Onusai#6441, Added functionality by Vetchems
 // @match        https://gelbooru.com/index.php?page=post&s=view*
 // @match        https://safebooru.donmai.us/posts/*
 // @match        https://danbooru.donmai.us/posts/*
@@ -23,15 +23,18 @@
     let include_commas = true;
     let remove_underscores = true;
     let remove_parentheses = false;
-    let randomize_tag_order = false;
     let escape_colons = false;
+    let tag_prompt = false;
 
     // Edit to change tag group order or remove certain groups completely
     let tag_group_order = ["general", "artist"]; // "metadata", "copyright", "character"
 
     // Edit to change hotkeys
-    let hotkey_default = '`';
-    let hotkey_1 = '1'; // randomize tags
+    let hotkey_default = '`'; // default tag copy
+    let hotkey_randtag = '1'; // randomize tags
+    let hotkey_randpage = '2'; // load random image from current booru site
+    let hotkey_savetxt = '4'; // save the current cache of copied tags
+    let hotkey_prompttoggle = '-'; //toggle whether to display a prompt of the tags or just copy them to clipboard
     let hotkey_clear = '='; // clear tags history
 
     // Edit to include tags to be ignored
@@ -46,19 +49,61 @@
         // Add more replacements as needed
     };
 
-    const urlToLoad = 'https://danbooru.donmai.us/posts/random?tags=';
 
     // Function to handle key press events
     function handleKeyPress(event) {
-        // Check if the pressed key is #
-        if (event.key === '2') {
+
+        // Toggle prompt display
+        if (event.key === hotkey_prompttoggle) {
+            // Prevent the default behavior of the key press (e.g., typing # in an input field)
+            event.preventDefault();
+
+            // Copy tags/show prompt and add to cache
+            tag_prompt = !tag_prompt;
+            alert("Prompt display is now: " + tag_prompt);
+        }
+
+        // Default tag copy
+        if (event.key === hotkey_default) {
+            // Prevent the default behavior of the key press (e.g., typing # in an input field)
+            event.preventDefault();
+
+            // Copy tags/show prompt and add to cache
+            show_prompt(false);
+        }
+
+        // Random tag order
+        if (event.key === hotkey_randtag) {
+            // Prevent the default behavior of the key press (e.g., typing # in an input field)
+            event.preventDefault();
+
+            // Copy tags/show prompt and add to cache
+            show_prompt(true);
+        }
+
+        // Random page
+        if (event.key === hotkey_randpage) {
             // Prevent the default behavior of the key press (e.g., typing # in an input field)
             event.preventDefault();
 
             // Load the specified URL in the current tab
-            window.location.href = urlToLoad;
+            let url = window.location.href;
+            if (url.includes("/gelbooru.com")) window.location.href = "https://gelbooru.com/index.php?page=post&s=random";
+            if (url.includes("/danbooru.donmai.us")) window.location.href = "https://danbooru.donmai.us/posts/random";
+            if (url.includes("/safebooru.donmai.us")) window.location.href = "https://safebooru.donmai.us/posts/random";
+            if (url.includes("/aibooru.online")) window.location.href = "https://aibooru.online/posts/random";
         }
-        // Check if the pressed key is =
+
+        // Download tag history as txt
+        if (event.key === hotkey_savetxt) {
+            // Prevent the default behavior of the key press (e.g., typing # in an input field)
+            event.preventDefault();
+
+            // Copy tags/show prompt and add to cache
+            downloadTagsHistory();
+        }
+
+        // Clear tag history
         if (event.key === hotkey_clear) {
             // Prevent the default behavior of the key press
             event.preventDefault();
@@ -94,28 +139,16 @@
         }
     }
 
-    let keysPressed = {};
 
-    $(document).on('keyup', (event) => {
-        if (event.key == hotkey_default) show_prompt(randomize_tag_order);
-        if (event.key == hotkey_1) show_prompt(true);
-    });
-
-    $(document).on('keydown', (event) => {
-        keysPressed[event.key] = true;
-        if (!keysPressed[hotkey_default]) return;
-        if (event.key == hotkey_1) show_prompt(true);
-    })
 
     // Constant filename for the text file
     const filename = 'tags_history.txt';
 
     function show_prompt(randomize=false) {
-        for (var member in keysPressed) delete keysPressed[member];
 
         let tags = null;
         let url = window.location.href;
-        if (url.includes("/gelbooru.com"))tags = get_gel_tags(randomize);
+        if (url.includes("/gelbooru.com")) tags = get_gel_tags(randomize);
         else if (url.includes("/danbooru.donmai.us") || url.includes("/safebooru.donmai.us") || url.includes("/aibooru.online")) tags = get_dan_tags(randomize);
         if (!tags) return;
 
@@ -138,8 +171,9 @@
         if (remove_parentheses) tags = tags.replaceAll("(", "").replaceAll(")", "");
         else tags = tags.replaceAll("(", "\\(").replaceAll(")", "\\)");
 
+        if (tag_prompt) prompt("Prompt: " + tag_count + " tags", tags);
         // Copy tags to the clipboard
-        GM_setClipboard(tags);
+        else GM_setClipboard(tags);
 
         // Append the new set of tags to the text file
         appendTagsToFile(tags);
@@ -168,12 +202,6 @@
             saveAs: true,
         });
     }
-
-    // Event listener for the keydown event
-    $(document).on('keydown', (event) => {
-        keysPressed[event.key] = true;
-        if (event.key == '4') downloadTagsHistory();
-    });
 
     function get_gel_tags(randomize=false) {
         let tags = [];
