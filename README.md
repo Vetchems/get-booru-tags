@@ -9,13 +9,14 @@ Provides hotkeys on booru sites to quickly copy and save image tags, with tag ig
 
 # How to use
 1. Open an image on one of the supported booru sites
-2. Press the `[~]` tilde key under `[Esc]` to copy all tags
+2. Press a hotkey
 
 ### Hotkeys:
 * `[~]` : Copy tags
 * `[1]` : Randomize and copy tags
 * `[2]` : Load random image on danbooru
 * `[4]` : Download tags text file
+* `[-]` : Toggle prompt to display tags
 * `[=]` : Clear previous stored tags
 
 Note: To change options or hotkeys, edit the script variables
@@ -23,3 +24,5 @@ Note: To change options or hotkeys, edit the script variables
 # Supported websites
 * danbooru.donmai.us
 * gelbooru.com
+* aibooru.online
+* safebooru.donmai.us
